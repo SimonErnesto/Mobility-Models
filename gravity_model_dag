@@ -1,0 +1,40 @@
+digraph {
+	t_s [label="t_s
+~
+Exponential" shape=ellipse]
+	alpha [label="alpha
+~
+Exponential" shape=ellipse]
+	o_s [label="o_s
+~
+Exponential" shape=ellipse]
+	g_s [label="g_s
+~
+Exponential" shape=ellipse]
+	subgraph cluster119 {
+		theta [label="theta
+~
+HalfNormal" shape=ellipse]
+		lam [label="lam
+~
+Deterministic" shape=box]
+		omega [label="omega
+~
+HalfNormal" shape=ellipse]
+		m [label="m
+~
+NegBinomial" shape=ellipse style=filled]
+		gamma [label="gamma
+~
+HalfNormal" shape=ellipse]
+		label=119 labeljust=r labelloc=b style=rounded
+	}
+	t_s -> theta
+	o_s -> omega
+	g_s -> gamma
+	theta -> lam
+	gamma -> lam
+	omega -> lam
+	alpha -> m
+	lam -> m
+}
