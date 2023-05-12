@@ -39,6 +39,7 @@ for tar in tar_files:
         f = f[f.destino.str.startswith("28")]
         files.append(f)
         df = pd.concat(files)
+    df['visitors'] = np.repeat(1, len(df))
     dfs.append(df.groupby(["origen", "destino"], as_index=False).mean())
 
 df = pd.concat(dfs)
@@ -46,8 +47,8 @@ df = df.groupby(["origen", "destino"], as_index=False).mean()
 df.to_csv("data_madrid_2022_ave.csv", index=False)
 
 
-df = pd.concat(files)
-df.to_csv("data_madrid_2022_ave.csv", index=False)
+df = pd.concat(dfs)
+df.to_csv("data_madrid_2022_monthly_ave.csv", index=False)
 
 # f = files[0]    
 

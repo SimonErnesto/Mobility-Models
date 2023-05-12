@@ -29,11 +29,15 @@ Finally, we run a Gravity model over the vector of travellers from Mostoles (exa
 <p align="center"> &sigma; ~ Exponential(50) </p>
 <p align="center"> y<sub>m</sub> ~ NegativeBinomial(&lambda;, &sigma;) </p>
 
-Where sub-index m = [1...119] municpios, D = distance matrix from municpio to municipio, M<sub>i</sub> = population at origins, and N<sub>j</sub> = populations at destinations. The model sampled well with R^ ~ 1 and effective sample sizes over 1000 for all parameters.
+Where sub-index m = [1...119] municpios, D = distance matrix from municpio to municipio, M<sub>i</sub> = population at origins, and N<sub>j</sub> = populations at destinations. The model sampled well with R^ ~ 1 and effective sample sizes over 500 for all parameters.
 
 <h1> Results </h1>
 
-<p> Results indicate that the Visitation Model outperforms the other two models according to an similarity index (SSI) metric (Schläpfer et al., 2021), defined as <i>SSI = 2&sum;<sub>ij</sub>min(E,O)/(&sum;<sub>ij</sub>E + &sum;<sub>ij</sub>O)</i>, where <i>E</i> is the estimated average number of visitors and <i>O</i> is the observed average number of visitors.</p>
+<p> Results indicate that the Visitation Model outperforms the other models and the Gravity Models outperforms the Radiation Model according to an similarity index (SSI) metric (Schläpfer et al., 2021), defined as <i>SSI = 2&sum;<sub>ij</sub>min(E,O)/(&sum;<sub>ij</sub>E + &sum;<sub>ij</sub>O)</i>, where <i>E</i> is the estimated average number of visitors and <i>O</i> is the observed average number of visitors.</p>
+
+<p align="center">
+	<img src="compare_models.png" width="800" height="500" />
+<p>
 
 <p align="center">
 	<img src="plot_madrid_municipio_observed.png" width="800" height="500" />
@@ -51,9 +55,10 @@ Where sub-index m = [1...119] municpios, D = distance matrix from municpio to mu
 	<img src="plot_madrid_municipio_gravity.png" width="800" height="500" />
 <p>
 
+
 <h1> Conclusion </h1>
 
-<p> The Gravity Model largely outperforms the other two models in terms of the SSI metric. However, no model shows really close estimates of average daily travellers from Mostoles (the example municipio) to other neighbourhoods. More exploration of metrics and approximations may be required to better assess the models. The Gravity model may offer more leeway as its parametric form may be optimised by parameter adjustment, prior predictive checks and other techniques.   </p>
+<p> The Gravity and Visitation models perform much better than the Radiation model. However, the Gravity Model tends to underperform at large values, while the Visitation Model slightly underperforms at low values. More exploration of metrics and approximations may be required to better assess the models. The Gravity model may offer more leeway as its parametric form may be optimised by parameter adjustment, prior predictive checks and other techniques. Nevertheless, it is possible to explore parametric forms of the Visitation Model as well, which may outperform the other models in the long run.   </p>
 
 <H1> References </H1>
 <P>Schläpfer, M., Dong, L., O’Keeffe, K. et al. The universal visitation law of human mobility. Nature 593, 522–527 (2021). https://doi.org/10.1038/s41586-021-03480-9 </p>

@@ -12,7 +12,7 @@ HalfNormal" shape=ellipse]
 ~
 HalfNormal" shape=ellipse]
 	subgraph cluster119 {
-		omega [label="omega
+		gamma [label="gamma
 ~
 HalfNormal" shape=ellipse]
 		lam [label="lam
@@ -21,7 +21,7 @@ Deterministic" shape=box]
 		m [label="m
 ~
 NegBinomial" shape=ellipse style=filled]
-		gamma [label="gamma
+		omega [label="omega
 ~
 HalfNormal" shape=ellipse]
 		theta [label="theta
@@ -32,9 +32,9 @@ HalfNormal" shape=ellipse]
 	t_s -> theta
 	o_s -> omega
 	g_s -> gamma
-	omega -> lam
 	gamma -> lam
+	omega -> lam
 	theta -> lam
-	lam -> m
 	alpha -> m
+	lam -> m
 }
