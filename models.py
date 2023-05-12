@@ -10,6 +10,7 @@ from tqdm import tqdm
 import pymc as pm
 import pytensor.tensor as at
 import arviz as az
+from scipy.stats import binned_statistic
 
 os.chdir(os.getcwd())
 
@@ -89,7 +90,7 @@ for c in range(len(madg)):
     ch_map.plot(x,y, color=colors[c])  
 cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
 cbar.set_ticklabels([min_val,mid_val,max_val])
-plt.title("Observed Data Jan 2022: Travels from Móstoles", fontsize=18)
+plt.title("Observed Data: Average Daily Travellers from Móstoles Jan 2022", fontsize=18)
 plt.axis('off')
 plt.tight_layout()
 plt.savefig("plot_madrid_municipio_observed.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
@@ -155,7 +156,7 @@ min_val = int(min(madg["28092"]))
 colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
 sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
 
-SSI_visit = 2*np.sum(np.minimum(Vij,obs))/(np.sum(Vij) + np.sum(obs))
+SSI_vis = 2*np.sum(np.minimum(Vij[63], obs[63]))/(np.sum(Vij[63]) + np.sum(obs[63]))
 
 ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
 for c in range(len(madg)):
@@ -169,7 +170,7 @@ for c in range(len(madg)):
     ch_map.plot(x,y, color=colors[c])  
 cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
 cbar.set_ticklabels([min_val,mid_val,max_val])
-plt.text(0.1, 0.1,"SSI: "+str(round(SSI_visit, 2)), transform=ch_map.transAxes, fontsize=18)
+plt.text(0.1, 0.1,"SSI: "+str(round(SSI_vis, 2)), transform=ch_map.transAxes, fontsize=18)
 plt.title("Visitation Law Estimate: Average Daily Travellers from Móstoles Jan 2022", fontsize=18)
 plt.axis('off')
 plt.tight_layout()
@@ -237,7 +238,7 @@ min_val = int(min(madg["28092"]))
 colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
 sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
 
-SSI_rad = 2*np.sum(np.minimum(Tmean,obs))/(np.sum(Tmean) + np.sum(obs))
+SSI_rad = 2*np.sum(np.minimum(Tmean[63], obs[63]))/(np.sum(Tmean[63]) + np.sum(obs[63]))
 
 ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
 for c in range(len(madg)):
@@ -259,11 +260,13 @@ plt.savefig("plot_madrid_municipio_radiation.png", dpi=300, bbox_inches='tight',
 plt.show()
 plt.close()
 
+
 ###############################################################################
 ########################### Gavity Model ######################################
 
-Mi = pob.poblacion.values #populations origin
+Mi = pob.poblacion.values[63] #populations origin
 Nj = pob.poblacion.values #populations destination
+Oi = data[data.origen=='28092'].viajes.values #origin's total outflow, i.e. total number of trips per unit of time (in this case daily average over a month)
 muni_n = len(data.origen.unique())
 
 ##single origin version
@@ -271,60 +274,47 @@ dj = pd.DataFrame(R, index=mad.ID.unique(), columns=mad.ID.unique())
 dj = dj.T['28092'].values
 T = Tdf_obs.T['28092'].values
 with pm.Model() as mod:
-    t_s = pm.Exponential("t_s", 3)
+    t_s = pm.HalfNormal("t_s", 1)
     theta = pm.HalfNormal("theta", t_s, shape=muni_n)
-    o_s = pm.Exponential("o_s", 3)
+    o_s = pm.HalfNormal("o_s", 0.5)
     omega = pm.HalfNormal("omega", o_s, shape=muni_n)
-    g_s = pm.Exponential("g_s", 3)
+    g_s = pm.HalfNormal("g_s", 0.5)
     gamma = pm.HalfNormal("gamma", g_s, shape=muni_n)
     lam_den = (Nj**omega)*(dj**-gamma)
     lam_num = at.sum(lam_den)
     lam = pm.Deterministic("lam", theta*Mi*(lam_den/lam_num))
-    alpha = pm.Exponential("alpha", 50)
+    alpha = pm.HalfNormal("alpha", 10)
     m = pm.NegativeBinomial("m", mu=lam, alpha=alpha, observed=T)
 
 dag = pm.model_to_graphviz(mod)
 dag.render("gravity_model_dag", format="png")
 dag
 
+#sample prior predictive
 with mod:
-    idata = pm.sample(2000, chains=4, cores=12)#, target_accept=0.9)
+    ppc = pm.sample_prior_predictive(1000, var_names=['m'])
+ppc = ppc.stack(sample = ['chain', 'draw']).prior_predictive
+ppc_m = ppc['m'].values
+ppc_mean = ppc_m.mean(axis=1)
+samples = np.random.randint(0, 1000, 100)
+for s in samples:
+    plt.plot(ppc_m[:,s], alpha=0.1, color="r")
+plt.plot(ppc_m[:,s+1], alpha=0.1, color="r", label="prior predictive samples")
+plt.plot(np.arange(len(ppc_mean)), ppc_mean, label="prior predictive samples mean")
+plt.plot(np.arange(len(ppc_mean)), T, color='grey', linestyle=":", label="observed")
+plt.legend()
+plt.title("Prior Predictive Checks: Gravity Model")
+plt.savefig("prior_predictive_gravity.png", dpi=300)
+
+#sample MCMC
+with mod:
+    idata = pm.sample(2000, chains=4, cores=12, target_accept=0.99)
+
 
 pos = idata.stack(sample = ['chain', 'draw']).posterior
 pos_lam = pos['lam'].values.mean(axis=1)
 Ndf =  pd.DataFrame({"28092":pos_lam})
 Ndf['ID'] = data.destino.unique()
-
-# with pm.Model() as mod:
-#     t_s = pm.Exponential("t_s", 3)
-#     theta = pm.HalfNormal("theta", t_s, shape=muni_n)
-#     o_s = pm.Exponential("o_s", 3)
-#     omega = pm.HalfNormal("omega", o_s, shape=muni_n)
-#     g_s = pm.Exponential("g_s", 3)
-#     gamma = pm.HalfNormal("gamma", g_s, shape=muni_n)
-#     lam_den = (Nj**omega)*(R**-gamma)
-#     lam_num = at.sum(lam_den, axis=1)
-#     lam = pm.Deterministic("lam", theta*Mi*(lam_den/lam_num))
-#     alpha = pm.Exponential("alpha", 10)
-#     m = pm.NegativeBinomial("m", mu=lam, alpha=alpha, observed=Tdf_obs.values)
-    
-# dag = pm.model_to_graphviz(mod)
-# dag.render("gravity_model_dag", format="png")
-# dag
-
-# with mod:
-#     idata = pm.sample(2000, chains=4, cores=12, target_accept=0.99)
-    
-# pos = idata.stack(sample = ['chain', 'draw']).posterior
-
-# pos_lam = pos['lam'].values.mean(axis=2)
-
-
-### Plot Gravity Model's Estimates for New York County
-# Tdf =  pd.DataFrame(pos_lam, index=data.origen.unique(), columns=data.destino.unique())
-# Ndf = Tdf[Tdf.index=="28092"].T
-# Ndf['ID'] = Ndf.index
-Ndf = Ndf.replace(np.nan,0)
 madg = pd.merge(mad,Ndf)
 madg = madg.sort_values(by="28092", ascending=False)
 madg.reset_index(inplace=True, drop=True)
@@ -336,7 +326,7 @@ min_val = int(min(madg["28092"]))
 colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
 sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
 
-SSI_grav = 2*np.sum(np.minimum(pos_lam,obs))/(np.sum(pos_lam) + np.sum(obs))
+SSI_gra = 2*np.sum(np.minimum(pos_lam,T))/(np.sum(pos_lam) + np.sum(T))
 
 ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
 for c in range(len(madg)):
@@ -350,7 +340,7 @@ for c in range(len(madg)):
     ch_map.plot(x,y, color=colors[c])  
 cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
 cbar.set_ticklabels([min_val,mid_val,max_val])
-plt.text(0.1, 0.1,"SSI: "+str(round(SSI_grav, 2)), transform=ch_map.transAxes, fontsize=18)
+plt.text(0.1, 0.1,"SSI: "+str(round(SSI_gra, 2)), transform=ch_map.transAxes, fontsize=18)
 plt.title("Gravity Model Estimate: Average Daily Travellers from Móstoles Jan 2022", fontsize=18)
 plt.axis('off')
 plt.tight_layout()
@@ -358,6 +348,180 @@ plt.savefig("plot_madrid_municipio_gravity.png", dpi=300, bbox_inches='tight', p
 plt.show()
 plt.close()
 
+
+#sample posterior predictive
+with mod:
+    ppc = pm.sample_posterior_predictive(idata, var_names=['m'])
+ppc = ppc.stack(sample = ['chain', 'draw']).posterior_predictive
+ppc_m = ppc['m'].values 
+    
+#plot posterior predictive
+pos_lam = ppc_m.mean(axis=1)
+Ndf =  pd.DataFrame({"28092":pos_lam})
+Ndf['ID'] = data.destino.unique()
+madg = pd.merge(mad,Ndf)
+madg = madg.sort_values(by="28092", ascending=False)
+madg.reset_index(inplace=True, drop=True)
+
+max_val = int(max(madg["28092"]))
+mid_val = int(np.median(madg["28092"]))
+min_val = int(min(madg["28092"]))
+
+colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
+sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
+
+SSI_gra = 2*np.sum(np.minimum(pos_lam,T))/(np.sum(pos_lam) + np.sum(T))
+
+ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
+for c in range(len(madg)):
+    #ch_map.set_facecolor("grey")
+    muni_dest = madg.ID[c]
+    orig = "28092" 
+    dest_coord = mad[mad.ID==muni_dest].coords.values[0]
+    orig_coord = mad[mad.ID==orig].coords.values[0]
+    x = (dest_coord[0], orig_coord[0])
+    y = (dest_coord[1], orig_coord[1])
+    ch_map.plot(x,y, color=colors[c])  
+cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
+cbar.set_ticklabels([min_val,mid_val,max_val])
+plt.text(0.1, 0.1,"SSI: "+str(round(SSI_gra, 2)), transform=ch_map.transAxes, fontsize=18)
+plt.title("Gravity Model Predictions: Average Daily Travellers from Móstoles Jan 2022", fontsize=18)
+plt.axis('off')
+plt.tight_layout()
+plt.savefig("plot_madrid_municipio_gravity_ppc.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+plt.show()
+plt.close()
+
 #save summary of mcmc posteriors
 summ = az.summary(idata, hdi_prob=0.9)
 summ.to_csv("gravity_model_hierarchical_summary.csv")
+
+# Mi = pob.poblacion.values #populations origin
+# Nj = pob.poblacion.values #populations destination
+# Oi = F.mean(axis=1) #origin's total outflow, i.e. total number of trips per unit of time (in this case daily average over a month)
+# muni_n = len(data.origen.unique())
+
+# obs_sparse = data.groupby(['origen', 'destino']).mean()
+# obs_sparse = pd.pivot_table(obs_sparse, index='origen', columns='destino', values='visitors')
+
+# with pm.Model() as mod:
+#     t_s = pm.HalfNormal("t_s", 0.1)
+#     theta = pm.HalfNormal("theta", t_s)#, shape=muni_n)
+#     o_s = pm.HalfNormal("o_s", 0.1)
+#     omega = pm.HalfNormal("omega", o_s)#, shape=muni_n)
+#     g_s = pm.HalfNormal("g_s", 0.1)
+#     gamma = pm.HalfNormal("gamma", g_s)#, shape=muni_n)
+#     lam_den = (Nj**omega)*(R*-gamma)
+#     lam_num = at.sum(lam_den, axis=1)
+#     lam = pm.Deterministic("lam", theta*Mi*(lam_den/lam_num))
+#     alpha = pm.HalfNormal("alpha", 0.1)
+#     #m = pm.NegativeBinomial("m", mu=lam, alpha=alpha, observed=Tdf_obs.values)
+#     psi = pm.Beta("psi", 1,1)
+#     m = pm.ZeroInflatedNegativeBinomial("m", mu=lam, alpha=alpha, psi=psi, observed=N)
+    
+# dag = pm.model_to_graphviz(mod)
+# dag.render("gravity_model_dag", format="png")
+# dag
+
+# with mod:
+#     ppc = pm.sample_prior_predictive(1000, var_names=['m'])
+# ppc = ppc.stack(sample = ['chain', 'draw']).prior_predictive
+# ppc_m = ppc['m'].values
+# obs_df = Tdf_obs
+# obs_df['id'] = np.arange(len(obs_df))
+# idx = obs_df[obs_df.index=="28092"].id.values[0]
+# ppc_mean = ppc_m[63].mean(axis=1)
+# ppc_sd = ppc_m[63].std(axis=1)
+# plt.plot(np.arange(len(ppc_mean)), ppc_mean)
+# for s in range(ppc_m.shape[1]):
+#     plt.plot(ppc_m[63][:,s], alpha=0.3, color="r")
+
+# ##sample
+# with mod:
+#     idata = pm.sample(1000, chains=4, cores=12)#, target_accept=0.99)
+    
+# pos = idata.stack(sample = ['chain', 'draw']).posterior
+
+# pos_lam = pos['lam'].values.mean(axis=2)
+
+# ## Plot Gravity Model's Estimates from Mostoles
+# Tdf =  pd.DataFrame(pos_lam, index=data.origen.unique(), columns=data.destino.unique())
+# Ndf = Tdf[Tdf.index=="28092"].T
+# Ndf['ID'] = Ndf.index
+# Ndf = Ndf.replace(np.nan,0)
+# madg = pd.merge(mad,Ndf)
+# madg = madg.sort_values(by="28092", ascending=False)
+# madg.reset_index(inplace=True, drop=True)
+
+# max_val = int(max(madg["28092"]))
+# mid_val = int(np.median(madg["28092"]))
+# min_val = int(min(madg["28092"]))
+
+# colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
+# sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
+
+# SSI_gra = 2*np.sum(np.minimum(pos_lam,obs))/(np.sum(pos_lam) + np.sum(obs))
+
+# ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
+# for c in range(len(madg)):
+#     #ch_map.set_facecolor("grey")
+#     muni_dest = madg.ID[c]
+#     orig = "28092" 
+#     dest_coord = mad[mad.ID==muni_dest].coords.values[0]
+#     orig_coord = mad[mad.ID==orig].coords.values[0]
+#     x = (dest_coord[0], orig_coord[0])
+#     y = (dest_coord[1], orig_coord[1])
+#     ch_map.plot(x,y, color=colors[c])  
+# cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
+# cbar.set_ticklabels([min_val,mid_val,max_val])
+# plt.text(0.1, 0.1,"SSI: "+str(round(SSI_gra, 2)), transform=ch_map.transAxes, fontsize=18)
+# plt.title("Gravity Model Estimate: Average Daily Travellers from Móstoles Jan 2022", fontsize=18)
+# plt.axis('off')
+# plt.tight_layout()
+# plt.savefig("plot_madrid_municipio_gravity.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
+# plt.show()
+# plt.close()
+
+# #save summary of mcmc posteriors
+# summ = az.summary(idata, hdi_prob=0.9)
+# summ.to_csv("gravity_model_simple_summary.csv")
+
+
+################ Comparison Plot #####################
+V_obs = pd.pivot_table(data, index='origen', columns='destino', values='visitors').values #Number of visitors
+V_obs[np.isnan(V_obs)] = 0
+V_obs = V_obs[63]
+V_vis = pd.DataFrame(Vij, index=data.origen.unique(), columns=data.destino.unique())
+V_vis = V_vis.T["28092"].values
+V_rad = pd.DataFrame(Tmean, index=data.origen.unique(), columns=data.destino.unique())
+V_rad = V_rad.T["28092"].values
+# V_gra = pd.DataFrame(pos_lam, index=data.origen.unique(), columns=data.destino.unique())
+# V_gra = V_gra.T["28092"].values
+V_gra = pos_lam
+
+obs_means = binned_statistic(V_obs, V_obs, bins=5, range=(0.1, max(V_obs)))[0]
+vis_means = binned_statistic(V_vis, V_vis, bins=5, range=(0.1, max(V_vis)))[0]
+rad_means = binned_statistic(V_rad, V_rad, bins=5, range=(0.1, max(V_rad)))[0]
+gra_means = binned_statistic(V_gra, V_gra, bins=5, range=(0.1, max(V_gra)))[0]
+
+
+obs_means = np.sort(V_obs)
+vis_means = np.sort(V_vis)
+rad_means = np.sort(V_rad)
+gra_means = np.sort(V_gra)
+
+
+plt.plot(obs_means, obs_means, color='k', linestyle=":", label="Observed")
+plt.scatter(obs_means, vis_means, marker="o", facecolor="w", color="g", label="Visitation model: SSI="+str(round(SSI_vis, 2)))
+plt.scatter(obs_means, rad_means, marker="^", facecolor="w", color="b", label="Radiation model: SSI="+str(round(SSI_rad, 2)))
+plt.scatter(obs_means, gra_means, marker="x", color="r", label="Gravity model: SSI="+str(round(SSI_gra, 2)))
+plt.ylim(-1000, max(obs_means)+1000)
+plt.xlim(-1000, max(obs_means)+1000)
+plt.rcParams['axes.spines.right'] = False
+plt.rcParams['axes.spines.top'] = False
+plt.legend()
+plt.title("Movement from Mostoles")
+plt.savefig("compare_models.png", dpi=300)
+plt.show()
+plt.close()
+

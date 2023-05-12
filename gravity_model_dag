@@ -1,30 +1,30 @@
 digraph {
-	t_s [label="t_s
-~
-Exponential" shape=ellipse]
-	alpha [label="alpha
-~
-Exponential" shape=ellipse]
-	o_s [label="o_s
-~
-Exponential" shape=ellipse]
 	g_s [label="g_s
 ~
-Exponential" shape=ellipse]
-	subgraph cluster119 {
-		theta [label="theta
+HalfNormal" shape=ellipse]
+	o_s [label="o_s
 ~
 HalfNormal" shape=ellipse]
+	alpha [label="alpha
+~
+HalfNormal" shape=ellipse]
+	t_s [label="t_s
+~
+HalfNormal" shape=ellipse]
+	subgraph cluster119 {
 		lam [label="lam
 ~
 Deterministic" shape=box]
-		omega [label="omega
+		theta [label="theta
+~
+HalfNormal" shape=ellipse]
+		gamma [label="gamma
 ~
 HalfNormal" shape=ellipse]
 		m [label="m
 ~
 NegBinomial" shape=ellipse style=filled]
-		gamma [label="gamma
+		omega [label="omega
 ~
 HalfNormal" shape=ellipse]
 		label=119 labeljust=r labelloc=b style=rounded
