@@ -7,7 +7,7 @@
 <h2>Visitation Model</h2>
 <p> According to the visitation law of human mobility the number of unique locations visited by an individual is proportional to the square root of the total number of visits they make (Schläpfer et al., 2021). Thus the magnitude of a flow of visitors given a distance <i>r</i> and a frequency of visitation <i>f</i> can be approximated as: <i>&mu;</i> = <i>&rho;</i>(<i>rf</i>)<sup>2</sup> , where <i>r</i> = distance between origin and destination, <i>f</i> = once per day and the "spectral flow" <i>&rho;</i> =  <i>N/A</i>, where <i>N</i> are the visitors counts and <i>A</i> = <i>2&pi;r&delta;r</i>, the area of displacement where we assume (for present analysis) the incremental distance <i>&delta;r</i> = 1km. So, the average number of visitors per day can be estimated as: </p>
 
-<p align="center"> <i>V</i> = <i>&mu;A</i>/<i>r<sup>2</sup>ln(f<sub>max</sub>f<sub>min</sub>)</i></p>
+<p align="center"> <i>V</i> = <i>&mu;A</i>/<i>r<sup>2</sup>ln(f<sub>max</sub>/f<sub>min</sub>)</i></p>
 
 Presently we use the entire matrix of areas <i>A</i>, slightly abusing notation <i>A</i> = <i>A<sub>ij</sub></i> . We use the entire matrix of magnitudes <i>&mu;</i> and radi <i>r</i> in the same manner. Where <i>f<sub>min</sub> = F/N/31</i>, and <i>f<sub>max</sub> = F/N</i>, where <i>F</i> is the average number of visits from origin to location over 1 month and <i>N</i> is the average number of visitors over the same month. That is, <i>f<sub>min</sub></i> indicates the average minimum frequency of visitation per person during a month and <i>f<sub>max</sub></i> the maximum.
 
