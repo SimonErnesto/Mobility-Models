@@ -25,9 +25,11 @@ mad = gdf[gdf.ID.str.contains("28")]
 mad = mad[mad.ID.str.startswith("28")]
 
 #extract data from Madrid only
+months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 tar_files = glob.glob("./data/*.tar")
 dfs = []
-for tar in tar_files:
+for t in range(len(tar_files)):
+    tar = tar_files[t]
     files = []
     tars = tarfile.open(tar)
     for member in tqdm(tars.getmembers()):
@@ -37,13 +39,15 @@ for tar in tar_files:
         f = f[f.origen.str.startswith("28")]
         f = f[f.destino.str.contains("28")]
         f = f[f.destino.str.startswith("28")]
+        f = f[f.actividad_origen=="casa"]
         files.append(f)
         df = pd.concat(files)
     df['visitors'] = np.repeat(1, len(df))
-    dfs.append(df.groupby(["origen", "destino"], as_index=False).mean())
+    df['visitors'] = np.repeat(months[t], len(df))
+    dfs.append(df.groupby(["origen", "destino", "month"], as_index=False).sum())
 
 df = pd.concat(dfs)
-df = df.groupby(["origen", "destino"], as_index=False).mean()
+df = df.groupby(["origen", "destino"], as_index=False).sum()
 df.to_csv("data_madrid_2022_ave.csv", index=False)
 
 
