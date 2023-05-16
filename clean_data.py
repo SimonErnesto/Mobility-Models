@@ -43,7 +43,7 @@ for t in range(len(tar_files)):
         files.append(f)
         df = pd.concat(files)
     df['visitors'] = np.repeat(1, len(df))
-    df['visitors'] = np.repeat(months[t], len(df))
+    df['month'] = np.repeat(months[t], len(df))
     dfs.append(df.groupby(["origen", "destino", "month"], as_index=False).sum())
 
 df = pd.concat(dfs)

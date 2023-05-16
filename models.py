@@ -220,7 +220,6 @@ Tmean = Ti*p
 Tsd = np.sqrt(Ti*p*(1-p))
 
 
-
 ### Plot Radiation Model's Estimates for Mostoles
 Tdf = pd.DataFrame(Tmean, index=mad.ID.unique(), columns=mad.ID.unique())
 Ndf = Tdf[Tdf.index=="28092"].T
@@ -272,19 +271,20 @@ dj = pd.DataFrame(R, index=mad.ID.unique(), columns=mad.ID.unique())
 dj = dj.T['28092'].values
 T = Tdf_obs.T['28092'].values
 with pm.Model() as mod:
-    theta = pm.HalfNormal("theta", 2)
+    # theta = pm.HalfNormal("theta", 2)
     omega = pm.HalfNormal("omega", 2) 
     g_s = pm.HalfNormal("g_s", 0.25)
     gamma = pm.HalfNormal("gamma", g_s, shape=muni_n)
+    theta = pm.Gamma("theta", 0.01, 0.01)
     lam_den = (Nj**omega)*(dj**-gamma)
     lam_num = at.sum(lam_den)
     lam = pm.Deterministic("lam", theta*Mi*(lam_den/lam_num))
     alpha = pm.HalfNormal("alpha", 3)
     m = pm.NegativeBinomial("m", mu=lam, alpha=alpha, observed=T)
 
-# dag = pm.model_to_graphviz(mod)
-# dag.render("gravity_model_dag", format="png")
-# dag
+dag = pm.model_to_graphviz(mod)
+dag.render("gravity_model_dag", format="png")
+dag
 
 with mod:
     ppc = pm.sample_prior_predictive(1000, var_names=['m'])
