@@ -1,40 +1,32 @@
 digraph {
-	theta [label="theta
-~
-Gamma" shape=ellipse]
-	alpha1 [label="alpha1
-~
-HalfNormal" shape=ellipse]
-	g_s [label="g_s
-~
-HalfNormal" shape=ellipse]
-	alpha2 [label="alpha2
+	alpha [label="alpha
 ~
 HalfNormal" shape=ellipse]
 	omega [label="omega
 ~
 HalfNormal" shape=ellipse]
+	g_s [label="g_s
+~
+HalfNormal" shape=ellipse]
+	theta [label="theta
+~
+Gamma" shape=ellipse]
 	subgraph cluster119 {
-		w [label="w
+		m [label="m
 ~
 NegBinomial" shape=ellipse style=filled]
-		v [label="v
-~
-Deterministic" shape=box]
 		gamma [label="gamma
 ~
 HalfNormal" shape=ellipse]
-		y [label="y
+		lam [label="lam
 ~
-NegBinomial" shape=ellipse style=filled]
+Deterministic" shape=box]
 		label=119 labeljust=r labelloc=b style=rounded
 	}
 	g_s -> gamma
-	theta -> v
-	omega -> v
-	gamma -> v
-	v -> y
-	alpha1 -> y
-	alpha2 -> w
-	v -> w
+	omega -> lam
+	gamma -> lam
+	theta -> lam
+	alpha -> m
+	lam -> m
 }

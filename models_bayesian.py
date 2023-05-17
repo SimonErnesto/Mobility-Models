@@ -10,7 +10,6 @@ from tqdm import tqdm
 import pymc as pm
 import pytensor.tensor as at
 import arviz as az
-from scipy.stats import binned_statistic
 
 os.chdir(os.getcwd())
 
@@ -104,12 +103,11 @@ T = 31 #length of period under study
 
 #################### Visitation Model #############################
 with pm.Model() as mod_v:
-    mu = pm.Uniform("mu", 1e4, 1e5, shape=len(Vij_obs))
-    #mu = pm.Exponential("mu", 0.001, shape=119)
     fmin = pm.Uniform("fmin", 0.1, 1, shape=len(Vij_obs))
-    fmax = pm.Uniform("fmax", 1, 100, shape=len(Vij_obs))
+    fmax = pm.Uniform("fmax", 1, 50, shape=len(Vij_obs))
+    mu = pm.Wald("mu", 50, 10) #pm.Uniform("mu", 1e4, 1e5) #, shape=len(Vij_obs))
     v = pm.Deterministic("v", (mu*Ai)/(np.log(fmax/fmin)*rij**2))
-    alpha1 = pm.HalfNormal("alpha", 100)
+    alpha1 = pm.HalfNormal("alpha", 10)
     y = pm.NegativeBinomial("y", mu=v, alpha=alpha1, observed=Vij_obs)
 
 dag = pm.model_to_graphviz(mod_v)
@@ -133,7 +131,8 @@ Vij_vis_m = Vij_vis['mean_v'].values
 Vij_obs_s = np.sort(Vij_obs)
 SSI_v_vis = 2*np.sum(np.minimum(Vij_obs_s, Vij_vis_m))/(np.sum(Vij_obs_s) + np.sum(Vij_vis_m))
 
-Qij_pos = Ai*(T**-1)*mu.T/(rj**2) #pos_v['q'].values.mean(axis=1)
+Qij_pos = np.array([Ai*(T**-1)*m/(rj**2) for m in mu])  
+#Qij_pos = Ai*(T**-1)*mu.T/(rj**2) 
 qij_mean = Qij_pos.mean(axis=0)
 qij_h5, qij_h95 = az.hdi(Qij_pos, hdi_prob=0.9).T
 
@@ -158,11 +157,11 @@ Sij = np.array(Sij)
 ## Radiation model for number of trips
 with pm.Model() as mod_r:
     #Ti = pm.Uniform("Ti", 1e3, 1e5, shape=len(Vij_obs)) 
-    Ti = pm.Exponential("Ti", 0.00001, shape=len(Vij_obs))
+    Ti = pm.Wald("Ti", 50000, 10000, shape=len(Vij_obs)) #pm.Exponential("Ti", 0.00001, shape=len(Vij_obs))
     p_num = Mi*Nj
     p_den = (Mi + Sij)*(Mi + Nj + Sij)
     v = pm.Deterministic("v", Ti*(p_num/p_den))
-    alpha = pm.HalfNormal("alpha", 100)
+    alpha = pm.HalfNormal("alpha", 10)
     y = pm.NegativeBinomial("y", mu=v, alpha=alpha, observed=Vij_obs)
 
 dag = pm.model_to_graphviz(mod_r)
@@ -178,11 +177,11 @@ pos_r_y = idata_r_y.stack(sample = ['chain', 'draw']).posterior
 
 with pm.Model() as mod:
     #Ti = pm.Uniform("Ti", 1e4, 1e5, shape=len(Vij_obs)) 
-    Ti = pm.Exponential("Ti", 0.0001, shape=len(Vij_obs))
+    Ti = pm.Wald("Ti", 50000, 10000, shape=len(Vij_obs)) #pm.Exponential("Ti", 0.0001, shape=len(Vij_obs))
     p_num = Mi*Nj
     p_den = (Mi + Sij)*(Mi + Nj + Sij)
     v = pm.Deterministic("q", Ti*(p_num/p_den))
-    alpha = pm.HalfNormal("alpha", 100)
+    alpha = pm.HalfNormal("alpha", 10)
     w = pm.NegativeBinomial("w", mu=v, alpha=alpha, observed=Qij_obs)
     idata_r_w = pm.sample(1000)
 pos_r_w = idata_r_w.stack(sample = ['chain', 'draw']).posterior
@@ -198,7 +197,7 @@ Vij_rad_m = Vij_rad['mean_v'].values
 Vij_obs_s = np.sort(Vij_obs)
 SSI_v_rad = 2*np.sum(np.minimum(Vij_obs_s, Vij_rad_m))/(np.sum(Vij_obs_s) + np.sum(Vij_rad_m))
 
-Qij_pos = pos_r_w['q'].values*T #pos_v['q'].values.mean(axis=1)
+Qij_pos = pos_r_w['q'].values#*T #pos_v['q'].values.mean(axis=1)
 qij_mean = Qij_pos.mean(axis=1)
 qij_h5, qij_h95 = az.hdi(Qij_pos.T, hdi_prob=0.9).T
 
@@ -357,8 +356,8 @@ ax[1,0].set_title("Average Daily Travellers")
 ax[1,0].set_ylabel("Estmiate")
 ax[1,0].set_xlabel("Observed")
 
-SSI_q_gra2 = 2*np.sum(np.minimum(Qij_obs_s[:87], Qij_gra_m[:87]))/(np.sum(Qij_obs_s[:87]) + np.sum(Qij_gra_m[:87]))
-SSI_q_vis2 = 2*np.sum(np.minimum(Qij_obs_s[:87], Qij_vis_m[:87]))/(np.sum(Qij_obs_s[:87]) + np.sum(Qij_vis_m[:87]))
+SSI_q_gra2 = 2*np.sum(np.minimum(Qij_obs_s[:85], Qij_gra_m[:85]))/(np.sum(Qij_obs_s[:85]) + np.sum(Qij_gra_m[:85]))
+SSI_q_vis2 = 2*np.sum(np.minimum(Qij_obs_s[:85], Qij_vis_m[:85]))/(np.sum(Qij_obs_s[:85]) + np.sum(Qij_vis_m[:85]))
 ax[1,1].plot(np.arange(118)[:85], Qij_obs_s[:85], color='k', linestyle=":", label="Observed")
 ax[1,1].plot(np.arange(118)[:85], Qij_vis.mean_q[:85], color="g", label="Visitation: SSI="+str(round(SSI_v_vis, 2)))
 ax[1,1].fill_between(np.arange(118)[:85], Qij_vis.h5_q[:85], Qij_vis.h95_q[:85], color="g", alpha=0.2)

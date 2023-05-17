@@ -275,7 +275,7 @@ with pm.Model() as mod:
     omega = pm.HalfNormal("omega", 2) 
     g_s = pm.HalfNormal("g_s", 0.25)
     gamma = pm.HalfNormal("gamma", g_s, shape=muni_n)
-    theta = pm.Gamma("theta", 0.01, 0.01)
+    theta = pm.Gamma("theta", 0.001, 0.001)
     lam_den = (Nj**omega)*(dj**-gamma)
     lam_num = at.sum(lam_den)
     lam = pm.Deterministic("lam", theta*Mi*(lam_den/lam_num))
@@ -303,7 +303,7 @@ plt.savefig("prior_predictive_gravity.png", dpi=300)
 
 
 with mod:
-    idata = pm.sample(1000, chains=4, cores=12, target_accept=0.99)
+    idata = pm.sample(2000, chains=4, cores=12, target_accept=0.99)
 
 pos = idata.stack(sample = ['chain', 'draw']).posterior
 pos_lam = pos['lam'].values.mean(axis=1)

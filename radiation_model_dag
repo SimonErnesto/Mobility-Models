@@ -1,20 +1,20 @@
 digraph {
 	subgraph cluster118 {
-		v [label="v
+		Ti [label="Ti
 ~
-Deterministic" shape=box]
+Wald" shape=ellipse]
 		y [label="y
 ~
 NegBinomial" shape=ellipse style=filled]
-		Ti [label="Ti
+		v [label="v
 ~
-Exponential" shape=ellipse]
+Deterministic" shape=box]
 		label=118 labeljust=r labelloc=b style=rounded
 	}
 	alpha [label="alpha
 ~
 HalfNormal" shape=ellipse]
 	Ti -> v
-	v -> y
 	alpha -> y
+	v -> y
 }
