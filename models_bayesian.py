@@ -29,9 +29,6 @@ mad = gdf[gdf.ID.str.startswith("28")] #Madrid municipios start with 28
 
 data = pd.read_csv("data_jan_ave.csv")
 
-Tdf_obs = pd.pivot_table(data, index='origen', columns='destino', values='viajes')/31
-madri_idx = Tdf_obs.columns.get_loc(madri)
-
 data = data[data.destino==madri] #data.groupby(["origen", "destino"], as_index=False).mean()
 data['ID'] = data.origen
 
@@ -42,10 +39,12 @@ pob = pob.drop_duplicates('municipio')
 
 data = pd.merge(data, pob)
 
+madri_idx = data[data.origen==madri].index[0]
+
 #################### Observed Data ##############################
 ### Plot Survey data observed
-#Tdf_obs = data.groupby(['origen', 'destino']).mean()
-
+Tdf_obs = data.groupby(['origen', 'destino']).mean()
+Tdf_obs = pd.pivot_table(data, index='origen', columns='destino', values='viajes').T
 Ndf = pd.DataFrame({"ID":Tdf_obs[madri].index, madri:Tdf_obs[madri].values})
 Ndf = Ndf.replace(np.nan,0)
 madg = pd.merge(mad,Ndf)
@@ -194,7 +193,7 @@ Sij = np.array(Sij)
 ## Radiation model for number of trips
 with pm.Model() as mod_rv:
     #Ti = pm.Uniform("Ti", 1e3, 1e5, shape=len(Vij_obs)) 
-    Ti = pm.Wald("Ti", 600000, 100000, shape=len(Vij_obs)) #pm.Exponential("Ti", 0.00001, shape=len(Vij_obs))
+    Ti = pm.Wald("Ti", 50000, 10000, shape=len(Vij_obs)) #pm.Exponential("Ti", 0.00001, shape=len(Vij_obs))
     p_num = Mi*Nj
     p_den = (Mi + Sij)*(Mi + Nj + Sij)
     v = pm.Deterministic("v", Ti*(p_num/p_den))
@@ -237,7 +236,6 @@ SSI_v_rad = 2*np.sum(np.minimum(Vij_obs_s, Vij_rad_m))/(np.sum(Vij_obs_s) + np.s
 Qij_pos = pos_r_w['q'].values#*T #pos_v['q'].values.mean(axis=1)
 qij_mean = Qij_pos.mean(axis=1)
 qij_h5, qij_h95 = az.hdi(Qij_pos.T, hdi_prob=0.9).T
-
 Qij_rad = pd.DataFrame({"mean_q":qij_mean, "h5_q":qij_h5, "h95_q":qij_h95})
 Qij_rad = Qij_rad.sort_values(by="mean_q")
 Qij_rad_m = Qij_rad['mean_q'].values

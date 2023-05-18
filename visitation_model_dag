@@ -1,17 +1,17 @@
 digraph {
 	subgraph cluster118 {
+		y [label="y
+~
+NegBinomial" shape=ellipse style=filled]
+		fmin [label="fmin
+~
+Uniform" shape=ellipse]
 		fmax [label="fmax
 ~
 Uniform" shape=ellipse]
 		v [label="v
 ~
 Deterministic" shape=box]
-		fmin [label="fmin
-~
-Uniform" shape=ellipse]
-		y [label="y
-~
-NegBinomial" shape=ellipse style=filled]
 		label=118 labeljust=r labelloc=b style=rounded
 	}
 	mu [label="mu
@@ -20,9 +20,9 @@ Wald" shape=ellipse]
 	alpha [label="alpha
 ~
 HalfNormal" shape=ellipse]
-	fmax -> v
 	mu -> v
 	fmin -> v
+	fmax -> v
 	v -> y
 	alpha -> y
 }

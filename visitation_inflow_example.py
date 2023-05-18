@@ -39,43 +39,7 @@ pob = pob[pob.municipio.isin(data.ID.unique())]
 pob = pob.drop_duplicates('municipio') 
 
 data = pd.merge(data, pob)
-
-#################### Observed Data ##############################
-### Plot Survey data observed
-#Tdf_obs = data.groupby(['origen', 'destino']).mean()
-Tdf_obs = pd.pivot_table(data, index='origen', columns='destino', values='viajes')/31
-madri_idx = Tdf_obs.columns.get_loc(madri)
-Ndf = pd.DataFrame({"ID":Tdf_obs[madri].index, madri:Tdf_obs[madri].values})
-Ndf = Ndf.replace(np.nan,0)
-madg = pd.merge(mad,Ndf)
-madg = madg.sort_values(by=madri, ascending=False)
-madg.reset_index(inplace=True, drop=True)
-
-max_val = int(max(madg[madri]))
-mid_val = int(np.median(madg[madri]))
-min_val = int(min(madg[madri]))
-
-colors = np.array([mpl.cm.get_cmap('gist_heat')(x/len(madg)) for x in range(len(madg))])
-sm = plt.cm.ScalarMappable(cmap=mpl.cm.get_cmap('gist_heat'))
-
-ch_map = mad.plot(figsize=(10,20), color="tan", alpha=0.2, edgecolor="k")
-for c in range(len(madg)):
-    #ch_map.set_facecolor("grey")
-    muni_dest = madg.ID[c]
-    orig = madri
-    dest_coord = mad[mad.ID==muni_dest].coords.values[0]
-    orig_coord = mad[mad.ID==orig].coords.values[0]
-    x = (dest_coord[0], orig_coord[0])
-    y = (dest_coord[1], orig_coord[1])
-    ch_map.plot(x,y, color=colors[c])  
-cbar = plt.colorbar(sm,fraction=0.005, pad=0.001)
-cbar.set_ticklabels([min_val,mid_val,max_val])
-plt.title("Observed Data: Average Daily Travellers to Central Madrid Jan 2022", fontsize=18)
-plt.axis('off')
-plt.tight_layout()
-plt.savefig("plot_madrid_municipio_observed.png", dpi=300, bbox_inches='tight', pad_inches=0.1)
-plt.show()
-plt.close()
+madri_idx = data[data.origen==madri].index[0]
 
 
 ###############################################################################
