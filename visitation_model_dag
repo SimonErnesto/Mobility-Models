@@ -3,15 +3,15 @@ digraph {
 		fmax [label="fmax
 ~
 Uniform" shape=ellipse]
+		v [label="v
+~
+Deterministic" shape=box]
 		fmin [label="fmin
 ~
 Uniform" shape=ellipse]
 		y [label="y
 ~
 NegBinomial" shape=ellipse style=filled]
-		v [label="v
-~
-Deterministic" shape=box]
 		label=118 labeljust=r labelloc=b style=rounded
 	}
 	mu [label="mu
@@ -21,8 +21,8 @@ Wald" shape=ellipse]
 ~
 HalfNormal" shape=ellipse]
 	fmax -> v
-	fmin -> v
 	mu -> v
-	alpha -> y
+	fmin -> v
 	v -> y
+	alpha -> y
 }

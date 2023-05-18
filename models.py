@@ -107,7 +107,7 @@ obs[np.isnan(obs)] = 0
 xy = np.array([np.array(mad.centroid.values[i].xy) for i in tqdm(range(len(mad)))]).T[0]
 D = distance_matrix(xy.T, xy.T) + 0.000000001 #distance matrix in meters
 
-R = D/1000  #radiuses in km
+R = D/10000  #radiuses in km
 
 A = 2*np.pi*R
 
@@ -271,10 +271,8 @@ dj = pd.DataFrame(R, index=mad.ID.unique(), columns=mad.ID.unique())
 dj = dj.T['28092'].values
 T = Tdf_obs.T['28092'].values
 with pm.Model() as mod:
-    # theta = pm.HalfNormal("theta", 2)
-    omega = pm.HalfNormal("omega", 2) 
-    g_s = pm.HalfNormal("g_s", 0.25)
-    gamma = pm.HalfNormal("gamma", g_s, shape=muni_n)
+    omega = pm.Gamma("omega", 1, 1) 
+    gamma = pm.Gamma("gamma", 1, 1, shape=muni_n)
     theta = pm.Gamma("theta", 0.001, 0.001)
     lam_den = (Nj**omega)*(dj**-gamma)
     lam_num = at.sum(lam_den)

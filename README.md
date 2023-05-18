@@ -23,9 +23,8 @@ Presently we use the entire matrix of areas <i>A</i>, slightly abusing notation 
 Finally, we run a Gravity model over the vector of travellers from Mostoles (example municipio) to the each municipio (119 including Mostoles). We used a Normalised Power Law Gravity Model (e.g. see Simini et al, 2021). The model is sampled via a Negative Binomial distribution, as it may be better for over-dispersed data, especially as it has distinct parameters for mean and variance (more relevant to appropriately capture uncertainty).
 
 <p align="center"> <i>&theta;</i> ~ Gamma(0.01, 0.01)</p>
-<p align="center"> <i>&omega;</i> ~ HalfNormal(2)</p>
-<p align="center"> <i>&sigma;<sub>&gamma;</sub></i>  ~ HalfNormal(0.25)</p>
-<p align="center"> <i>&gamma;<sub>i</sub></i> ~ HalfNormal(&sigma;<sub>&gamma;</sub>)</p>
+<p align="center"> <i>&omega;</i> ~ Gamma(1, 1)</p>
+<p align="center"> <i>&gamma;<sub>i</sub></i> ~ Gamma(1, 1)</p>
 <p align="center"> <i>&lambda;</i> = <i>&theta;<sub>m</sub>M<sub>i</sub>(N<sub>j</sub><sup>&omega;<sub>m</sub></sup>r<sub>ij</sub><sup>-&gamma;<sub>m</sub></sup> /  &sum;N<sub>j</sub><sup>&omega;<sub>m</sub></sup>r<sub>ij</sub><sup>-&gamma;<sub>m</sub></sup>)</i></p>
 <p align="center"> <i>&sigma;</i> ~ Exponential(5) </p>
 <p align="center"> <i>y<sub>m</sub></i> ~ NegativeBinomial(<i>&lambda;, &sigma;</i>) </p>
@@ -66,42 +65,50 @@ Although both Visitation and Radiation models have a parameter free structure, s
 
 <p align="center"> <i>&mu;<sub>j</sub></i> ~ Wald(50, 10) </p>
 <p align="center"> <i>f<sub>max</sub></i>  ~ Uniform(0.1, 1) </p>
-<p align="center"> <i>f<sub>max</sub></i>  ~ Uniform(1, 100) </p>
+<p align="center"> <i>f<sub>max</sub></i>  ~ Uniform(1, 50) </p>
 <p align="center"> <i>v<sub>ij</sub></i>  = <i>&mu;<sub>j</sub></i></i><i>A<sub>i</sub> / ln(<i>f<sub>max</sub></i> / <i>f<sub>min</sub>)r<sub>ij</sub><sup>2</sub></i></i> </p>
-<p align="center"> <i>&alpha;<sub>&gamma;</sub></i>  ~ HalfNormal(0.1)</p>
+<p align="center"> <i>&alpha;<sub>&gamma;</sub></i>  ~ HalfNormal(10)</p>
 <p align="center"> <i>y<sub>i</sub></i> ~ NegativeBinomial(<i>&lambda;, &alpha;</i>) </p>
 
-<p> For the present case we use the simplest form, assigning uniform priors constrained to the range of meaningful magnitudes for each frequency parameter. For the flow magnitude it is possible to assign a continuous distributions constrained to positive values such as a Wald (Inverse Gaussian) distribution. The advantage of the visitation model is that we only need observed trips, which can be sampled via a Negative Binomial distribution (as usual), as travellers can be inferred from the total flow magnitude to central Madrid <i>&mu;<sub>j</sub></i> as <i>Q<sub>ij</sub> = T<sup>-1</sup>A<sub>i</sub><i>&mu;<sub>j</sub></i> / r<sub>ij</sub><sup>2</sup> </i>, where <i>r<sub>ij</sub><sup>2</sup></i> is the vector of distances from origin to destination (central Madrid). <i>T</i> is the length of the period and <i>A<sub>i</sub></i> are the origin areas. </p>
+<p> For the present case we use the simplest form, assigning uniform priors constrained to the range of meaningful magnitudes for each frequency parameter. For the flow magnitude it is possible to assign a continuous distributions constrained to positive values such as a Wald (Inverse Gaussian) distribution. Travellers can be inferred from the total flow magnitude to central Madrid <i>&mu;<sub>j</sub></i> as <i>Q<sub>ij</sub> = T<sup>-1</sup>A<sub>i</sub><i>&mu;<sub>j</sub></i> / r<sub>ij</sub><sup>2</sup> </i>, where <i>r<sub>ij</sub><sup>2</sup></i> is the vector of distances from origin to destination (central Madrid). <i>T</i> is the length of the period and <i>A<sub>i</sub></i> are the origin areas. However, we opted out for sampling a new model (equivalent to the model presented above) for estimating travellers, which allows to perform better comparisons with Gravity and Radiation models. </p>
 
 <h2>Bayesian Radiation Model</h2>
 The radiation model cannot include additional parameters, and we require to use one model for trips and another for travellers. Both take the same form.
-<p align="center"> <i>T<sub>i</sub></i> ~ Wald(50<sup>3</sup>, 10<sup>3</sup>) </p>
+<p align="center"> <i>T<sub>i</sub></i> ~ Wald(50<sup>4</sup>, 10<sup>4</sup>) </p>
 <p align="center"> <i>v<sub>ij</sub></i>  = <i>E(T<sub>ij</sub>) = T<sub>i</sub>M<sub>i</sub>N<sub>j</sub> / (M<sub>i</sub> + S<sub>ij</sub>)(Mi<sub>i</sub> + N<sub>j</sub> + S<sub>ij</sub>)</i> </p> </p>
 <p align="center"> <i>&alpha;<sub>&gamma;</sub></i>  ~ HalfNormal(0.1)</p>
 <p align="center"> <i>y<sub>i</sub></i> ~ NegativeBinomial(<i>&lambda;, &alpha;</i>) </p>
 
-As <i>T<sub>i</sub></i> is similar to magnitude of flow, we choose a Wald distribution but we inflate its internal parameters by one order of magnitude to account for the increase flow, namely flow from each origin <i>i</i> .
+As <i>T<sub>i</sub></i> is similar to magnitude of flow, we choose a Wald distribution but we inflate its internal parameters by few orders of magnitude to account for the increased flow, namely flow from each origin <i>i</i> .
 
 <h2>Bayesian Gravity Model</h2>
-We used exactly the same gravity model as presented above for comparison purposes. However, note that inflow and outflow may require different parametrisations.
+We used exactly the same gravity model as presented above for comparison purposes. However, note that inflow and outflow may require different parametrisations in the future.
 
 <h1> Results 2 </h1>
-<p>Results indicate that Gravity and Visitation models tend to under/over estimate less than the Radiation model. While Visitation is better at estimating Daily trips, Gravity is better at Daily visitors.</p>
+<p> Results indicate much higher Visitation model's SSI for trips but lower for travellers respect to the other two models.</p>
 
 <p align="center">
 	<img src="bayesian_visitation_model_estimates.png" width="800" height="400" />
 <p>
 
-<p>A more direct comparison between Gravity and Visitation Bayesian models indicate that both models show reasonably accurate and precise estimates of daily trips. The Visitation model tends to overpredict for daily travellers estimates. In both cases estimates tend to respect the exponential increase of trips/visitors. In the image below, shadows represent 90% highest density intervals (HDIs). </p>
+<p>A more direct comparison between Visitation and the other two models indicate that all three models produce reasonably accurate and precise estimates of travellers. The Visitation model tends to overpredict travellers at lower values and underpredict at higher values, but it is much more precise for all estimates. In both cases estimates tend to respect the exponential increase of trips/visitors. In the image below, shadows represent 90% highest density intervals (HDIs). </p>
 
 <p align="center">
-	<img src="bayesian_models_estimates.png" width="800" height="400" />
+	<img src="vistation_gravity_comparison.png" width="800" height="400" />
 <p>
 
-<p> Finally, leave one out cross validation (LOO-CV) comparisons indicate that the gravity model greatly outperforms the other two models.</p>
+<p align="center">
+	<img src="vistation_radiation_comparison.png" width="800" height="400" />
+<p>
+
+<p> Finally, leave one out cross validation (LOO-CV) comparisons indicate that the gravity model outperforms the other two models.</p>
 
 <p align="center">
-	<img src="model_comp_loo.png" width="800" height="400" />
+	<img src="trips_model_comp_loo.png" width="800" height="400" />
+<p>
+
+<p align="center">
+	<img src="travellers_model_comp_loo.png" width="800" height="400" />
 <p>
 
 

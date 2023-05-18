@@ -32,7 +32,9 @@ for t in range(len(tar_files)):
     tar = tar_files[t]
     files = []
     tars = tarfile.open(tar)
+    day = 0
     for member in tqdm(tars.getmembers()):
+        day += 1
         f = tars.extractfile(member)
         f = pd.read_csv(f, compression='gzip', sep='|')
         f = f[f.origen.str.contains("28")]
@@ -40,19 +42,22 @@ for t in range(len(tar_files)):
         f = f[f.destino.str.contains("28")]
         f = f[f.destino.str.startswith("28")]
         f = f[f.actividad_origen=="casa"]
+        f['day'] = np.repeat(str(day), len(f))
         files.append(f)
         df = pd.concat(files)
     df['visitors'] = np.repeat(1, len(df))
     df['month'] = np.repeat(months[t], len(df))
-    dfs.append(df.groupby(["origen", "destino", "month"], as_index=False).sum())
+    dfs.append(df.groupby(["origen", "destino", "month", "day"], as_index=False).sum())
 
-df = pd.concat(dfs)
-df = df.groupby(["origen", "destino"], as_index=False).sum()
-df.to_csv("data_madrid_2022_ave.csv", index=False)
+df_daily = pd.concat(dfs)
+df_daily.to_csv("data_madrid_2022_daily_ave.csv", index=False)
+
+# df = pd.concat(dfs)
+# df = df.groupby(["origen", "destino"], as_index=False).sum()
+# df.to_csv("data_madrid_2022_ave.csv", index=False)
 
 
-df = pd.concat(dfs)
-df.to_csv("data_madrid_2022_monthly_ave.csv", index=False)
+
 
 # f = files[0]    
 
